@@ -1,3 +1,5 @@
+package task1;
+
 import javafx.util.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -5,7 +7,6 @@ import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.BufferedReader;
@@ -14,7 +15,6 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.TreeMap;
 
 /**
  * Created by ramz on 11/04/15.
