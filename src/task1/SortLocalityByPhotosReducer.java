@@ -3,6 +3,7 @@ package task1;
 import javafx.util.Pair;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
@@ -16,32 +17,28 @@ import java.util.TreeMap;
  */
 public class SortLocalityByPhotosReducer extends Reducer<IntWritable, Text, Text, IntWritable> {
 
-    static PriorityQueue<Pair<Integer, String>> topNLocality = new PriorityQueue<Pair<Integer, String>>(50, new ComparePairByInteger());
+    public int topN = 50;
+    public int topNcount = 0;
+    Text locality = new Text();
+
+    public void setup(Context context){
+        topN = Integer.parseInt(context.getConfiguration().get("mapper.topNLocality.count", String.valueOf(topN)));
+    }
 
     @Override
     protected void reduce(IntWritable key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+
         for(Text value: values)
         {
-            topNLocality.add(new Pair<Integer, String>(key.get(), value.toString()));
-            if (topNLocality.size() > 50)
+            topNcount = topNcount + 1;
+
+            // Top N received. So returning
+            if (topNcount > topN)
             {
-                topNLocality.poll();
+                return;
             }
-        }
-    }
-
-    protected void cleanup(Context context)
-            throws IOException, InterruptedException {
-
-        IntWritable count = new IntWritable();
-        Text locality = new Text();
-
-        while(topNLocality.peek() != null)
-        {
-            Pair<Integer,String> value = topNLocality.poll();
-            count.set(value.getKey());
-            locality.set(value.getValue());
-            context.write(locality, count);
+            locality.set(value);
+            context.write(locality, key);
         }
     }
 }
