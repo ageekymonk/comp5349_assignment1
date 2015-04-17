@@ -87,9 +87,6 @@ public class TagsPerLocalityMapper extends Mapper<Object, Text, TextTextPair, In
         String placeid = dataArray[4];
         String locality_name = placeTable.get(placeid);
 
-        LOG.error("Locality Name " + locality_name);
-        LOG.error("Tags " + dataArray[2]);
-
         if ((locality_name != null) && topPlaces.containsKey(locality_name))
         {
             String[] tags = dataArray[2].split(" ");
