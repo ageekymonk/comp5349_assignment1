@@ -21,8 +21,12 @@ public class PhotosPerLocalityDriver {
         Configuration conf = new Configuration();
         String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
         if (otherArgs.length < 3) {
-            System.err.println("Usage: PhotosPerLocality <placein> <photosin> <out>");
+            System.err.println("Usage: PhotosPerLocality <placein> <photosin> <out> <topN>");
             System.exit(2);
+        }
+
+        if (otherArgs.length == 4){
+            conf.set("mapper.topNLocality.count", otherArgs[3]);
         }
 
         Path tmpFilterOut = new Path("tmpFilterOut");
@@ -70,7 +74,7 @@ public class PhotosPerLocalityDriver {
         }
 
         tagJob.setJarByClass(PhotosPerLocalityDriver.class);
-        tagJob.setNumReduceTasks(4);
+        tagJob.setNumReduceTasks(1);
         tagJob.setMapperClass(TagsPerLocalityMapper.class);
         tagJob.setCombinerClass(TagsPerLocalityCombiner.class);
         tagJob.setReducerClass(TagsPerLocalityReducer.class);
