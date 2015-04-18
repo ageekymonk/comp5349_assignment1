@@ -12,7 +12,10 @@ public class CompareCountLocation implements Comparator<Pair<Integer, String>> {
         public int compare(Pair<Integer, String> o1, Pair<Integer, String> o2) {
             if (o1.getKey() == o2.getKey())
             {
-                return -1 * o1.getValue().compareTo(o2.getValue());
+                String name1 = o1.getValue().substring(o1.getValue().lastIndexOf("/") + 1);
+                String name2 = o2.getValue().substring(o2.getValue().lastIndexOf("/") + 1);
+
+                return -1 * name1.compareTo(name2);
             }
             else
             {

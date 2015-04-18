@@ -89,7 +89,8 @@ public class UsersPerLocalityReducer extends Reducer<CLNUComparable, IntWritable
             {
                 Pair<Integer,String> topLocation = entry.getValue().poll();
                 StringBuffer op_location = new StringBuffer();
-                op_location.append(topLocation.getValue() + ":" + topLocation.getKey().toString());
+                String toplocation_name = topLocation.getValue().substring(topLocation.getValue().lastIndexOf("/")+1);
+                op_location.append( toplocation_name + ":" + topLocation.getKey().toString());
                 PriorityQueue<Pair<Integer, String>> temp = topNbrPerLocality.get(topLocation.getValue());
                 if (temp != null)
                 {
@@ -98,7 +99,8 @@ public class UsersPerLocalityReducer extends Reducer<CLNUComparable, IntWritable
                     for (int i=arr.length-1; i >=0; i--)
                     {
                         Pair<Integer, String> elem = (Pair<Integer, String>)arr[i];
-                        op_location.append("," + elem.getValue().toString() + ":" + elem.getKey());
+                        String nbr_name = elem.getValue().toString().substring(elem.getValue().toString().lastIndexOf("/")+1);
+                        op_location.append("," + nbr_name + ":" + elem.getKey());
                     }
 
                 }
