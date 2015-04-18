@@ -1,6 +1,8 @@
 package task3;
 
+import common.PlaceTypePartitioner;
 import common.PlaceTypeTuple;
+import common.PlaceTypeUserPartitioner;
 import common.PlaceTypeUserTuple;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
@@ -34,12 +36,13 @@ public class Task3Driver {
         Job job = new Job(conf, "Unique Users Per Locality");
         DistributedCache.addCacheFile(new Path(otherArgs[0]).toUri(), job.getConfiguration());
         job.setJarByClass(Task3Driver.class);
-        job.setNumReduceTasks(1);
+        job.setNumReduceTasks(4);
         job.setMapperClass(UniqueUsersPerLocMapper.class);
         job.setCombinerClass(UniqueUsersPerLocCombiner.class);
 
         job.setMapOutputKeyClass(PlaceTypeUserTuple.class);
         job.setMapOutputValueClass(IntWritable.class);
+        job.setPartitionerClass(PlaceTypeUserPartitioner.class);
 
         job.setReducerClass(UniqueUsersPerLocReducer.class);
         job.setOutputKeyClass(PlaceTypeUserTuple.class);
@@ -55,12 +58,13 @@ public class Task3Driver {
         Job sortJob = new Job(conf, "Count Unique Users Per Locality");
         DistributedCache.addCacheFile(new Path(otherArgs[0]).toUri(), sortJob.getConfiguration());
         sortJob.setJarByClass(Task3Driver.class);
-        sortJob.setNumReduceTasks(1);
+        sortJob.setNumReduceTasks(4);
         sortJob.setMapperClass(CountUniqueUsersMapper.class);
         sortJob.setCombinerClass(CountUniqueUsersReducer.class);
 
         sortJob.setMapOutputKeyClass(PlaceTypeTuple.class);
         sortJob.setMapOutputValueClass(IntWritable.class);
+        sortJob.setPartitionerClass(PlaceTypePartitioner.class);
 
         ChainReducer.setReducer(sortJob, CountUniqueUsersReducer.class, PlaceTypeTuple.class, IntWritable.class,
                 PlaceTypeTuple.class, IntWritable.class, conf);
