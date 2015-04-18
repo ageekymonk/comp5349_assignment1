@@ -20,7 +20,7 @@ import java.util.Hashtable;
 public class UsersPerLocalityMapper extends Mapper<Object, Text, CLNUComparable, IntWritable> {
 
     private Hashtable<String, Pair<String, String>> countryLocalityTable = new Hashtable<String, Pair<String, String>>();
-    private Hashtable<String, Pair<String, String>> LocalityNbrTable = new Hashtable<String, Pair<String, String>>();
+    private Hashtable<String, String> LocalityNbrTable = new Hashtable<String, String>();
 
     public static final Log LOG = LogFactory.getLog(UsersPerLocalityMapper.class);
     public static final IntWritable one = new IntWritable(1);
@@ -40,20 +40,21 @@ public class UsersPerLocalityMapper extends Mapper<Object, Text, CLNUComparable,
                         continue; // don't emit anything
                     }
                     String place = tokens[6];
-
+                    int place_type = Integer.parseInt(tokens[5]);
                     String[] placeArray = place.split("/");
-                    if (placeArray.length == 4) {
-                        countryLocalityTable.put(tokens[0], new Pair<String, String>(placeArray[1], placeArray[3]));
+
+                    if (place_type == 7) {
+                        countryLocalityTable.put(tokens[0], new Pair<String, String>(placeArray[1], place));
                     }
-                    else if (placeArray.length == 5) {
-                        countryLocalityTable.put(tokens[0], new Pair<String, String>(placeArray[1], placeArray[3]));
-                        LocalityNbrTable.put(tokens[0], new Pair<String, String>(placeArray[1]+"/"+placeArray[3], placeArray[4]));
+                    else if (place_type == 22) {
+                        String location = place.substring(0, place.lastIndexOf('/'));
+                        countryLocalityTable.put(tokens[0], new Pair<String, String>(placeArray[1], location));
+                        LocalityNbrTable.put(tokens[0], place);
                     }
                 }
                 LOG.error("size of the Country Locality table is: " + countryLocalityTable.size());
                 LOG.error("size of the Locality Neighbourhood table is: " + LocalityNbrTable.size());
             } finally {
-                System.out.println("Finally Closing it");
                 placeReader.close();
             }
         }
@@ -67,11 +68,11 @@ public class UsersPerLocalityMapper extends Mapper<Object, Text, CLNUComparable,
         }
         String placeid = dataArray[4];
         Pair<String, String> cl = countryLocalityTable.get(placeid);
-        Pair<String, String> ln = LocalityNbrTable.get(placeid);
+        String nbrhood = LocalityNbrTable.get(placeid);
         if (cl != null)
             context.write(new CLNUComparable(cl.getKey(), cl.getValue(), "", dataArray[1]), one);
 
-        if ((cl != null) && (ln != null))
-            context.write(new CLNUComparable(cl.getKey(), cl.getValue(), ln.getValue(), dataArray[1]), one);
+        if ((cl != null) && (nbrhood != null))
+            context.write(new CLNUComparable(cl.getKey(), cl.getValue(), nbrhood, dataArray[1]), one);
     }
 }
