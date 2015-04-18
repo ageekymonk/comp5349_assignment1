@@ -1,9 +1,6 @@
 package task3;
 
-import common.PlaceTypePartitioner;
-import common.PlaceTypeTuple;
-import common.PlaceTypeUserPartitioner;
-import common.PlaceTypeUserTuple;
+import common.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
@@ -38,42 +35,21 @@ public class Task3Driver {
         job.setJarByClass(Task3Driver.class);
         job.setNumReduceTasks(4);
         job.setMapperClass(UniqueUsersPerLocMapper.class);
-        job.setCombinerClass(UniqueUsersPerLocCombiner.class);
+
 
         job.setMapOutputKeyClass(PlaceTypeUserTuple.class);
-        job.setMapOutputValueClass(IntWritable.class);
+        job.setMapOutputValueClass(Text.class);
+        job.setSortComparatorClass(PlaceTypeUserSorter.class);
         job.setPartitionerClass(PlaceTypeUserPartitioner.class);
+        job.setGroupingComparatorClass(PlaceTypeUserGroupComparator.class);
 
         job.setReducerClass(UniqueUsersPerLocReducer.class);
-        job.setOutputKeyClass(PlaceTypeUserTuple.class);
+        job.setOutputKeyClass(PlaceTypeTuple.class);
         job.setOutputValueClass(IntWritable.class);
 
         TextInputFormat.addInputPath(job, new Path(otherArgs[1]));
         TextOutputFormat.setOutputPath(job, UniqueUsersPerLocalityPath);
         job.waitForCompletion(true);
-
-
-        Path temp1 = new Path("temp1");
-
-        Job sortJob = new Job(conf, "Count Unique Users Per Locality");
-        DistributedCache.addCacheFile(new Path(otherArgs[0]).toUri(), sortJob.getConfiguration());
-        sortJob.setJarByClass(Task3Driver.class);
-        sortJob.setNumReduceTasks(4);
-        sortJob.setMapperClass(CountUniqueUsersMapper.class);
-        sortJob.setCombinerClass(CountUniqueUsersReducer.class);
-
-        sortJob.setMapOutputKeyClass(PlaceTypeTuple.class);
-        sortJob.setMapOutputValueClass(IntWritable.class);
-        sortJob.setPartitionerClass(PlaceTypePartitioner.class);
-
-        ChainReducer.setReducer(sortJob, CountUniqueUsersReducer.class, PlaceTypeTuple.class, IntWritable.class,
-                PlaceTypeTuple.class, IntWritable.class, conf);
-
-        TextInputFormat.addInputPath(sortJob, UniqueUsersPerLocalityPath);
-        TextOutputFormat.setOutputPath(sortJob, temp1);
-        sortJob.waitForCompletion(true);
-
-        FileSystem.get(conf).delete(UniqueUsersPerLocalityPath, true);
 
         Job topJob = new Job(conf, "Top 10 Location Per Country");
         DistributedCache.addCacheFile(new Path(otherArgs[0]).toUri(), topJob.getConfiguration());
@@ -87,10 +63,11 @@ public class Task3Driver {
         topJob.setReducerClass(TopLocationInCountryReducer.class);
         topJob.setOutputKeyClass(Text.class);
         topJob.setOutputValueClass(Text.class);
-        TextInputFormat.addInputPath(topJob, temp1);
+        TextInputFormat.addInputPath(topJob, UniqueUsersPerLocalityPath);
         TextOutputFormat.setOutputPath(topJob, new Path(otherArgs[2]));
 
         topJob.waitForCompletion(true);
+        FileSystem.get(conf).delete(UniqueUsersPerLocalityPath, true);
     }
 }
 

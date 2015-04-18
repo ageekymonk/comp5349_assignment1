@@ -16,13 +16,13 @@ import java.util.*;
 /**
  * Created by ramz on 18/04/15.
  */
-public class UniqueUsersPerLocMapper extends Mapper<Object, Text, PlaceTypeUserTuple, IntWritable> {
+public class UniqueUsersPerLocMapper extends Mapper<Object, Text, PlaceTypeUserTuple, Text> {
 
     public static int LOCALITY_TYPE = 7;
     public static int NEIGHBOURHOOD_TYPE = 22;
 
     private PlaceTypeUserTuple opkey = new PlaceTypeUserTuple();
-    private IntWritable one = new IntWritable(1);
+    private Text opVal = new Text();
 
     private HashMap<String, String> locIdToUrl = new HashMap<String, String>();
     private HashMap<String, String> nbrIdToUrl = new HashMap<String, String>();
@@ -78,8 +78,8 @@ public class UniqueUsersPerLocMapper extends Mapper<Object, Text, PlaceTypeUserT
             opkey.setPlace(locIdToUrl.get(dataArray[4]));
             opkey.setUser(dataArray[1]);
             opkey.setPlaceType(LOCALITY_TYPE);
-
-            context.write(opkey, one);
+            opVal.set(dataArray[1]);
+            context.write(opkey, opVal);
         }
         else if (nbrIdToUrl.containsKey(dataArray[4]))
         {
@@ -88,15 +88,16 @@ public class UniqueUsersPerLocMapper extends Mapper<Object, Text, PlaceTypeUserT
             opkey.setPlace(nbrurl);
             opkey.setUser(dataArray[1]);
             opkey.setPlaceType(NEIGHBOURHOOD_TYPE);
+            opVal.set(dataArray[1]);
 
-            context.write(opkey, one);
+            context.write(opkey, opVal);
 
             // Output for Locality
             opkey.setPlace(nbrurl.substring(0, nbrurl.lastIndexOf("/")));
             opkey.setUser(dataArray[1]);
             opkey.setPlaceType(LOCALITY_TYPE);
 
-            context.write(opkey, one);
+            context.write(opkey, opVal);
         }
 
     }
