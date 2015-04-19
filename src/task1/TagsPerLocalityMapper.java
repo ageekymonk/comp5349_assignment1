@@ -39,11 +39,15 @@ public class TagsPerLocalityMapper extends Mapper<Object, Text, TextTextPair, In
                     if (tokens.length < 7){ // a not complete record with all data
                         continue; // don't emit anything
                     }
-                    String place = tokens[6];
 
-                    String[] placeArray = place.split("/");
-                    if (placeArray.length >= 4) {
-                        placeTable.put(tokens[0], placeArray[3]);
+                    String place = tokens[6];
+                    int place_type = Integer.parseInt(tokens[5]);
+                    if (place_type == 7) {
+                        placeTable.put(tokens[0], place);
+                    }
+                    else if (place_type == 22)
+                    {
+                        placeTable.put(tokens[0], place.substring(0, place.lastIndexOf("/")));
                     }
                 }
                 LOG.error("size of the place table is: " + placeTable.size());
@@ -80,7 +84,6 @@ public class TagsPerLocalityMapper extends Mapper<Object, Text, TextTextPair, In
     protected void map(Object key, Text value, Context context) throws IOException, InterruptedException {
 
         String[] dataArray = value.toString().split("\t"); //split the data into array
-        LOG.error("Data " + value.toString());
         if (dataArray.length < 6){ // a not complete record with all data
             return; // don't emit anything
         }

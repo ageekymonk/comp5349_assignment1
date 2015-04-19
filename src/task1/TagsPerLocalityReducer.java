@@ -12,17 +12,14 @@ import org.apache.hadoop.mapreduce.Reducer;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.*;
 
 /**
  * Created by ramz on 11/04/15.
  */
 public class TagsPerLocalityReducer extends Reducer<TextTextPair, IntWritable, Text, Text> {
 
-    private Text result = new Text();
-    private Hashtable<String, Integer> topPlaces = new Hashtable<String, Integer>();
+    private List<Pair<String, Integer>> topPlaces = new LinkedList<Pair<String, Integer>>();
     private Hashtable<String, PriorityQueue<Pair<Integer, String>>> placeTable = new Hashtable<String, PriorityQueue<Pair<Integer, String>>>();
     public static final Log LOG = LogFactory.getLog(TagsPerLocalityReducer.class);
 
@@ -43,8 +40,7 @@ public class TagsPerLocalityReducer extends Reducer<TextTextPair, IntWritable, T
                         continue; // don't emit anything
                     }
                     String place = tokens[0];
-                    topPlaces.put(tokens[0], Integer.parseInt(tokens[1]));
-                    LOG.error("Top Places " + tokens[0] + " " + tokens[1]);
+                    topPlaces.add(new Pair<String, Integer>(tokens[0], Integer.parseInt(tokens[1])));
                 }
 
             }
@@ -78,21 +74,20 @@ public class TagsPerLocalityReducer extends Reducer<TextTextPair, IntWritable, T
     protected void cleanup(Context context)
             throws IOException, InterruptedException {
 
-
         Text locality = new Text();
         Text tags = new Text();
 
-        for (Map.Entry<String, PriorityQueue<Pair<Integer, String>>> value : placeTable.entrySet() ) {
-            locality.set(value.getKey());
+        while (!topPlaces.isEmpty())
+        {
+            Pair<String, Integer> topPlace = topPlaces.remove(0);
+            PriorityQueue<Pair<Integer, String>> tagQueue = placeTable.get(topPlace.getKey());
             StringBuffer taglist = new StringBuffer();
-            taglist.append(topPlaces.get(value.getKey()).toString()+"\t");
-            PriorityQueue<Pair<Integer, String>> tagQueue = value.getValue();
             while (tagQueue.peek() != null)
             {
                 Pair<Integer,String> tag = tagQueue.poll();
-                taglist.append(tag.getValue()+":"+tag.getKey().toString()+" ");
+                taglist.insert(0, tag.getValue() + ":" + tag.getKey().toString() + " ");
             }
-
+            taglist.insert(0, topPlace.getKey() + "\t" + topPlace.getValue().toString() + "\t");
             tags.set(taglist.toString().trim());
             context.write(locality , tags  );
         }

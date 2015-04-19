@@ -11,7 +11,7 @@ public class ComparePairByInteger implements Comparator<Pair<Integer, String>>{
     public int compare(Pair<Integer, String> o1, Pair<Integer, String> o2) {
         if (o1.getKey() == o2.getKey())
         {
-            return o1.getValue().compareTo(o2.getValue());
+            return -1 * o1.getValue().compareTo(o2.getValue());
         }
         else
         {

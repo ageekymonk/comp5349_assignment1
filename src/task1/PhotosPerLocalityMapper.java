@@ -36,10 +36,13 @@ public class PhotosPerLocalityMapper extends Mapper<Object, Text, Text, IntWrita
                         continue; // don't emit anything
                     }
                     String place = tokens[6];
-
-                    String[] placeArray = place.split("/");
-                    if (placeArray.length >= 4) {
-                        placeTable.put(tokens[0], placeArray[3]);
+                    int place_type = Integer.parseInt(tokens[5]);
+                    if (place_type == 7) {
+                        placeTable.put(tokens[0], place);
+                    }
+                    else if (place_type == 22)
+                    {
+                        placeTable.put(tokens[0], place.substring(0, place.lastIndexOf("/")));
                     }
                 }
                 System.out.println("size of the place table is: " + placeTable.size());

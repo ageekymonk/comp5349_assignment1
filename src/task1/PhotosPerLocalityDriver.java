@@ -55,6 +55,7 @@ public class PhotosPerLocalityDriver {
         sortJob.setMapOutputValueClass(Text.class);
         sortJob.setOutputKeyClass(Text.class);
         sortJob.setOutputValueClass(IntWritable.class);
+        sortJob.setSortComparatorClass(ReverseCountSorter.class);
         sortJob.setReducerClass(SortLocalityByPhotosReducer.class);
         TextInputFormat.addInputPath(sortJob, tmpFilterOut);
         TextOutputFormat.setOutputPath(sortJob, tmpTopLocalityOut);
