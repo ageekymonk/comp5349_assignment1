@@ -35,7 +35,7 @@ public class Task3Driver {
         job.setJarByClass(Task3Driver.class);
         job.setNumReduceTasks(4);
         job.setMapperClass(UniqueUsersPerLocMapper.class);
-
+        job.setCombinerClass(UniqueUsersPerLocCombiner.class);
 
         job.setMapOutputKeyClass(PlaceTypeUserTuple.class);
         job.setMapOutputValueClass(Text.class);

@@ -2,6 +2,7 @@ package task3;
 
 import common.PlaceTypeUserTuple;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
@@ -9,11 +10,11 @@ import java.io.IOException;
 /**
  * Created by ramz on 18/04/15.
  */
-public class UniqueUsersPerLocCombiner extends Reducer<PlaceTypeUserTuple, IntWritable, PlaceTypeUserTuple, IntWritable> {
-    public static IntWritable one = new IntWritable(1);
+public class UniqueUsersPerLocCombiner extends Reducer<PlaceTypeUserTuple, Text, PlaceTypeUserTuple, Text> {
+    public Text one = new Text();
 
     @Override
-    protected void reduce(PlaceTypeUserTuple key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
-        context.write(key,one);
+    protected void reduce(PlaceTypeUserTuple key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+        context.write(key,values.iterator().next());
     }
 }
