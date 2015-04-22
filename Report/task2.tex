@@ -1,0 +1,289 @@
+\chapter{Task2}
+
+\section{Problem Definition}
+	Top 10 Location for each country based on number of unique users 
+	
+\section{Design}
+	We have created 2 Jobs for solving the problem chained one after another\\
+	\begin{itemize}
+		\item [Job1:] Unique Users Per Locality  
+		\item [Job2:] Top 10 Location For each country
+	\end{itemize}
+
+	
+	\emph{Design Choice 1:}  Use of Distributed Cache \\
+		Since the current number of places has about 300,000 Entries and the size is about 33 MB, we have decided to use it as a distributed cache rather than running a Mapreduce job for joining the places and photos. If each Hash entry takes about 128 Bytes (Hash, String, Value) then for a million entry it would be 128 MB. Given the RAM capacity of modern machine, this approach can scale easily upto 8 Million Entries for 1G of RAM and even more. \\
+	\emph{Design Choice 2:} Use of Composite Keys \\
+		We have used composite keys for letting framework to sort and group so that we can find the unique users efficiently without the use of any hashmap which will make the solution not scalable. 
+		
+		Total Running time ~3 Minutes. \\
+\subsubsection{Job1}
+	This jobs outputs the unique users per locality. Each locality includes all the neighbourhood as well. Since the place.txt is small, i have used it as a distributed cache rather than adding another Map Reduce job.
+	
+	\textbf{Mapper} task takes the distributed cache and creates the photos and outputs a Composite key (Place, PlaceType, User) and value as (user). If the place type is Neighbourhood, there will be two outputs. One for the neighbourhood and other for the Locality. 
+	
+	 I have used user in key as well as value because if i sort the key based on entire key and group based on Place, i will get a sorted list of values (user). So it will be easier to find the unique as same users will be successive. So i have just traverse through the list and taking the first value. If the next is equal to previous i will skip that. 
+	
+	\textbf{Combiner} task is takes the key: (Place, PlaceType, User) Value: (users) and outputs only one (User). This avoids lot of bytes being shuffled across. 
+	
+	\textbf{Partition} is based on the Place. As we need to find the unique users per locality. This partition will allow us to find that. 
+	
+	\textbf{Sorting} is based on the entire key. (Place, PlaceType, User). So that the same users of the place will be successive in the resulting list. 
+	
+	\textbf{Grouping} is based on the place. Now we will have all the Users of the place available to reducer as sorted list. 
+	
+	\textbf{Reducer} task takes the (Place, PlaceType, User) as a key and list of sorted users as value. and returns (Place, PlaceType) as output key and count of unique users as Value.
+	
+\bgroup
+\scriptsize
+\begin{tabular}{| c | p{3cm} | p{3cm} | p{5cm} | }
+\hline 
+ \textbf{Segments}
+ & \textbf{Input}
+ & \textbf{Output}
+ & \textbf{Comments} \\ \hline
+ 
+ Mapper 
+ & 
+ Cache: Place.txt \newline
+ Photos 
+ & 
+Key: (Place, PlaceType, User) 
+Value: (user)
+
+ & 
+  \textbf{Setup:} \newline
+ 1. create Locality HashMap(locId, Placename) \newline
+ 2. create Nbrhood HashMap(nbrid, NbrhoodName) \newline
+ 2. For each line in Place.txt \newline
+ 		Locality HashMap[locId] = Placename \newline
+ 		Nbrhood HashMap[nbrid] = NbrhoodName \newline
+ \textbf{Map:} \newline
+ 1. For each Line \newline
+ 	if PlaceType = Locality then \newline
+ 		Output( (PlaceName, 7, user), user)\newline
+ 	else if PlaceType = Nbrhood then \newline
+ 		Output( (PlaceName, 7, user), user) \newline
+ 		Output( (NbrhoodName, 22, user), user) \newline
+ \\ \hline
+ 
+ Combiner 
+ & 
+Key: (Place, PlaceType, User)
+Value: (user)
+ &  
+Key: (Place, PlaceType, User)
+Value: (user)
+ & 
+ for each key, list(value) \newline
+ 	Output(key, value) \newline
+  \\ \hline
+
+Partitioner
+&
+\multicolumn{3}{ |c| }{ Partition based on the Place } 
+  \\ \hline 
+
+Sorter
+&
+\multicolumn{2}{ |c| }{ Sort based on Place, PlaceType and last by User. }
+& Now we have all the same users for the place consecutively. This will help us to find unique users easily.  
+  \\ \hline 
+  
+ Grouper
+&
+\multicolumn{2}{ |c| }{ Group based on Place. }
+& This will get all the users in the iterator, sorted. So we can count unique users easily 
+  \\ \hline 
+  
+  Reducer 
+ &
+Key: (Place Name , Place Type, User)
+Value: (users)
+ & 
+Key: (Place Name, Place Type)
+Value: (unique User Count) 
+& 
+ for each key, list(Value) \newline
+	Count the unique users in the list\newline
+	Output( (PlaceName, Place Type) , Count) \newline
+	\\ \hline
+ \end{tabular}
+\egroup
+
+\subsubsection{Job2}
+
+This jobs outputs the top 10 Locality for each country and for each locality a top Neighbourhood based on number of unique users. Each locality includes all the neighbourhood as well. Since the place.txt is small, i have used it as a distributed cache rather than adding another Map Reduce job.
+	
+	\textbf{Mapper} task takes the output of previous job with key (Place, PlaceType) and Value: (count) and returns key: (Country, Locality, Count, Name) and Value as Text with format "PlaceType:Count:Place".  Locality is in output for Neighbourhood but for actual locality the output will be "".
+	
+		For Example. For Locality Paris the output will be (France, "", 1000) ("7:1000:Paris")
+							For Neighbourhood in Paris, the output will be (France, Paris, 100) ("22:100:Nbr1")
+	
+	\textbf{Partition} is based on the Country. As we need to find the Top 10 Locality per country. This partition will allow us to find that. 
+	
+	\textbf{Sorting} is based on the Country, Locality and reverse (count). 
+	
+	\textbf{Grouping} is based on the Country. Now we will have all the Descending ordered Locality for each country, followed by Neighbourhood.
+	
+	\textbf{Reducer} task takes the key (Country, Locality, Count, Name) and the string with format "PlaceType:Count:Place". Takes only first 10 entries for Locality. And For each Locality it takes the top Neighbourhood. 
+
+\bgroup
+\scriptsize
+\begin{tabular}{| c | p{3cm} | p{3cm} | p{5cm} | }
+\hline 
+ \textbf{Segments}
+ & \textbf{Input} 
+ & \textbf{Output} 
+ & \textbf{Comments} \\ \hline
+ 
+ Mapper 
+ &
+ Text: placename  
+ PlaceType  Count
+
+ &  
+ Key: (Country, Locality, Count, Name)
+ Value: Text of Format
+ "PlaceType:Count:Place"
+ & 
+ 
+ \\ \hline
+
+ Partition 
+&
+\multicolumn{3}{ |c| }{ Partition based on Country } \\
+  \\ \hline
+ 
+ Sorting 
+&
+\multicolumn{3}{ |c| }{ Sort Country, Locality, count (descending order).  } \\
+  \\ \hline
+
+ Grouping 
+&
+\multicolumn{3}{ |c| }{ Grouping is based on Country } \\
+  \\ \hline
+ 
+  Reducer 
+ & 
+Key: (Country, Locality, Count, Name)
+Value:  "PlaceType:Count:Place"
+ &  
+CountryName  (placeName: NumOfUsers, neighbourhoodName: NumOfUsers)+
+ & 
+ Gives out Top 50 Places with the number of photos count \\ \hline
+\end{tabular}
+\egroup
+
+\section{Performance}
+	
+	For a highly scalable Map Reduce Job we need to make sure the following parameters are minimized
+	\begin{enumerate}
+	\item Time Taken for a  Map Task
+	\item Time Taken for Shuffling
+	\item Time Taken for a Reduce Task
+	\end{enumerate}
+	
+	Higher the number of shuffle bytes, more the time for reduce task. So knowing where the time is more gives us better idea to optimize the solutions.	
+	Below is our performance graph for our implementation. On X-Axis is the Input Size and on Y-Axis is Total Time taken by all mapper or Reducer. We have plotted both Mapper, Reducer, Mapper + Reducer. Due to our design the amount of work done in reducer is very minimal. \\
+	The overall running time is less than 3 Minutes, given we have enough Mapper task to run in parallel. 
+	
+	\begin{tikzpicture}
+    \begin{axis}[
+        xlabel=$DataSize$,
+        ylabel=$TimeTaken(inSeconds)$]
+    \addplot[smooth,mark=*,blue] plot coordinates {
+        (10,3662)
+        (7.1,2607)
+        (5,1707)
+        (3, 1121)
+        (2.3,890)
+        (1.0, 243)
+    };
+    \addlegendentry{Mapper}
+
+    \addplot[smooth,color=red,mark=x]
+        plot coordinates {
+            (10,468)
+            (7.1,316)
+            (5,148)
+            (3,171)            
+            (2.3,188)
+            (1.0,102)
+        };
+    \addlegendentry{Reducer}
+    
+    \addplot[smooth,color=green,mark=x]
+        plot coordinates {
+            (10,4130)
+            (7.1,2923)
+            (5, 1855)
+            (3,1292)            
+            (2.3,1078)
+            (1.0,345)
+        };
+    \addlegendentry{Total}    
+    
+    \end{axis}
+    \end{tikzpicture}
+    
+   \section{Alternate Design}
+   		It is possible to design a solution for the given problem with just one Map Reduce Job. Implementation for the design is also provided. 
+   		
+   		Since the number of places is small, we are using the places in the distributed cache. 
+   		
+   		\begin{tabular}{| c | p{3cm} | p{3cm} | p{5cm} | }
+\hline 
+ Segments 
+ & Input 
+ & Output 
+ & Comments \\ \hline
+ 
+ Mapper 
+ & \scriptsize 
+ Text: Photos
+
+ & \scriptsize 
+ Key: (Country, Locality, Neighbourhood, User)
+ Value: 1
+ & For each Neighbourhood there are two output one for (Country, Locality, "", User) and (Country, Locality, Nbrhood, User)
+ \\ \hline
+
+ Combiner 
+ & \scriptsize 
+ Key: (Country, Locality, Neighbourhood, User)
+ Value: 1
+
+ & \scriptsize 
+ Key: (Country, Locality, Neighbourhood, User)
+ Value: 1
+ & For every key we just output only one entry. This is for counting unique users.
+ \\ \hline
+
+ Partition 
+&
+\multicolumn{3}{ |c| }{ Partition based on Country } \\
+  \\ \hline
+  Reducer 
+ & \scriptsize 
+Key: (Country, Locality, Count, Name)
+Value:  1
+ & \scriptsize 
+CountryName \t (placeName: NumOfUsers, neighbourhoodName: NumOfUsers)+
+ & \scriptsize 
+ We have a hash map of all the places per country. So for every entry we use hashmap to count and at the end of the Reducer (In Cleanup Function) we output the desired output taken from the hashmap.  \\ \hline
+\end{tabular}
+
+\subsection{Pros and Cons}
+
+Pros:
+\begin{enumerate}
+	\item Number of Map Reduce Job is reduced
+	\item Better Performance if we have small sized data.
+\end{enumerate}
+
+Cons:
+\begin{enumerate}
+	\item Not scalable as few countries will have more places and more photos will be there. So a single reducer will be highly overloaded causing the delay
+\end{enumerate}
