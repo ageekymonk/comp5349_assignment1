@@ -66,7 +66,6 @@ public class PhotosPerLocalityDriver {
         Job tagJob = new Job(conf, "Top 10 Tags for Top 50 Locality");
 
         DistributedCache.addCacheFile(new Path(otherArgs[0]).toUri(), tagJob.getConfiguration());
-
         FileSystem fs = FileSystem.get(conf);
         Path pathPattern = new Path(tmpTopLocalityOut,"part-r-[0-9]*");
         FileStatus[] list = fs.globStatus(pathPattern);

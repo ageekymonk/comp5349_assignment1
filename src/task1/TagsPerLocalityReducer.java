@@ -81,15 +81,20 @@ public class TagsPerLocalityReducer extends Reducer<TextTextPair, IntWritable, T
         {
             Pair<String, Integer> topPlace = topPlaces.remove(0);
             PriorityQueue<Pair<Integer, String>> tagQueue = placeTable.get(topPlace.getKey());
-            StringBuffer taglist = new StringBuffer();
-            while (tagQueue.peek() != null)
+            if (tagQueue != null)
             {
-                Pair<Integer,String> tag = tagQueue.poll();
-                taglist.insert(0, tag.getValue() + ":" + tag.getKey().toString() + " ");
+                StringBuffer taglist = new StringBuffer();
+                String location = topPlace.getKey();
+                while (tagQueue.peek() != null)
+                {
+                    Pair<Integer,String> tag = tagQueue.poll();
+                    taglist.insert(0, tag.getValue() + ":" + tag.getKey().toString() + " ");
+                }
+                taglist.insert(0, topPlace.getValue().toString() + "\t");
+                tags.set(taglist.toString().trim());
+                locality.set(location.substring(location.lastIndexOf("/")+1));
+                context.write(locality , tags  );
             }
-            taglist.insert(0, topPlace.getKey() + "\t" + topPlace.getValue().toString() + "\t");
-            tags.set(taglist.toString().trim());
-            context.write(locality , tags  );
         }
     }
 }

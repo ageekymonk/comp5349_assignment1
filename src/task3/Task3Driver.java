@@ -30,10 +30,11 @@ public class Task3Driver {
 
         Path UniqueUsersPerLocalityPath = new Path("UniqueUsersPerLocalityPath");
 
+
         Job job = new Job(conf, "Unique Users Per Locality");
         DistributedCache.addCacheFile(new Path(otherArgs[0]).toUri(), job.getConfiguration());
         job.setJarByClass(Task3Driver.class);
-        job.setNumReduceTasks(4);
+        job.setNumReduceTasks(3);
         job.setMapperClass(UniqueUsersPerLocMapper.class);
         job.setCombinerClass(UniqueUsersPerLocCombiner.class);
 
