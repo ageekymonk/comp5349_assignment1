@@ -16,7 +16,6 @@
 	\emph{Design Choice 2:} Use of Composite Keys \\
 		We have used composite keys for letting framework to sort and group so that we can find the unique users efficiently without the use of any hashmap which will make the solution not scalable. 
 		
-		Total Running time ~3 Minutes. \\
 \subsubsection{Job1}
 	This jobs outputs the unique users per locality. Each locality includes all the neighbourhood as well. Since the place.txt is small, i have used it as a distributed cache rather than adding another Map Reduce job.
 	
@@ -187,6 +186,7 @@ CountryName  (placeName: NumOfUsers, neighbourhoodName: NumOfUsers)+
 	
 	Higher the number of shuffle bytes, more the time for reduce task. So knowing where the time is more gives us better idea to optimize the solutions.	
 	Below is our performance graph for our implementation. On X-Axis is the Input Size and on Y-Axis is Total Time taken by all mapper or Reducer. We have plotted both Mapper, Reducer, Mapper + Reducer. Due to our design the amount of work done in reducer is very minimal. \\
+	\\
 	The overall running time is less than 3 Minutes, given we have enough Mapper task to run in parallel. 
 	
 	\begin{tikzpicture}
@@ -231,9 +231,10 @@ CountryName  (placeName: NumOfUsers, neighbourhoodName: NumOfUsers)+
    \section{Alternate Design}
    		It is possible to design a solution for the given problem with just one Map Reduce Job. Implementation for the design is also provided. 
    		
-   		Since the number of places is small, we are using the places in the distributed cache. 
-   		
-   		\begin{tabular}{| c | p{3cm} | p{3cm} | p{5cm} | }
+   		Since the number of places is small, we are using the places in the distributed cache. \newline
+\bgroup
+\scriptsize
+\begin{tabular}{| c | p{3cm} | p{3cm} | p{5cm} | }
 \hline 
  Segments 
  & Input 
@@ -274,7 +275,7 @@ CountryName \t (placeName: NumOfUsers, neighbourhoodName: NumOfUsers)+
  & \scriptsize 
  We have a hash map of all the places per country. So for every entry we use hashmap to count and at the end of the Reducer (In Cleanup Function) we output the desired output taken from the hashmap.  \\ \hline
 \end{tabular}
-
+\egroup
 \subsection{Pros and Cons}
 
 Pros:

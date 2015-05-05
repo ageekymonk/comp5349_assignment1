@@ -16,6 +16,8 @@
 		\\
 	\emph{Design Choice 2:} Reading the Photos Data Twice \\
 	 	We implemented a map which reads the data and spits out two types output. One for tags and other for unique users. With that implementation the data output was about 20 Gigabytes. For the 80 Million entries for photos there we 700 million tags. Due to that we had huge amount of data which are useless causing lot of time in shuffling. And most of the data is useless as we are only concerned about top 50 locations. So we read the data again but only output tags for top 50 locations. This reduced timings massively.
+	 	
+	 	It also fails to scale, if your data goes into peta bytes the output generated will be 10x peta bytes which will be impossible to even store. So Reading the data twice is the right option.
 
 	Due to these optimisations, we could get the total Running time for the problem is ~ 5 Minutes.
 	
@@ -127,6 +129,18 @@ For first 50: Key and Value \newline
 
 
 \subsubsection{Job3}
+	We implemented the Job3 into two different jobs one which counts and other sorts and the perfomance was worse than the current implementation. 
+		
+	We find it unnecessary because the scale of data which is very minimal. Below is the statistics for the given data \newline
+	Total Tags = 700 Million \newline
+	Top 50 Location Tags = 140 Million\newline
+	After combiner = 13 Million\newline
+	Total Groups = 5 Million\newline
+	We can have as much as 50 Reducers to parallelize \newline
+	Reducer Load = 0.1 Million  \newline
+
+	Block Size of 128 MB ~= 	10 Million Groups\newline
+	This job should be able to process data in Tera Byte scale easily.  \newline
 
 \bgroup
 \scriptsize
